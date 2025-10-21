@@ -3,144 +3,169 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import io
 
-st.title("Aplikasi Kesihatan Ringkas")
+# =====================
+# Konfigurasi Aplikasi
+# =====================
+st.set_page_config(page_title="Aplikasi Kesihatan Ringkas", page_icon="💪", layout="centered")
+
+st.title("💪 Aplikasi Kesihatan Ringkas")
+st.markdown("Pantau **BMI**, **kalori harian**, dan **pemakanan sihat** anda di satu tempat.")
 
 # -------------------
-# Nama Pengguna
+# Input Nama
 # -------------------
-
-nama = st.text_input("Masukkan nama anda:")
-
-st.markdown("---")
-
-# -------------------
-# Kalkulator BMI
-# -------------------
-
-st.header("📏 Kalkulator BMI")
-
-berat = st.number_input("Berat (kg)", min_value=1.0, format="%.1f")
-tinggi = st.number_input("Tinggi (cm)", min_value=1.0, format="%.1f")
-
-bmi = None
-kategori_bmi = ""
-if berat and tinggi:
-    bmi = berat / ((tinggi / 100) ** 2)
-    st.write(f"BMI: {bmi:.2f}")
-
-    if bmi < 18.5:
-        kategori_bmi = "Kurus"
-    elif bmi < 25:
-        kategori_bmi = "Normal"
-    elif bmi < 30:
-        kategori_bmi = "Berlebihan berat"
-    else:
-        kategori_bmi = "Obes"
-
-    st.write(f"Status: **{kategori_bmi}**")
-
-st.markdown("---")
-
-# -------------------
-# Pengira Kalori Ringkas
-# -------------------
-
-st.header("🔥 Pengira Kalori Harian Ringkas")
-
-gender = st.selectbox("Pilih jantina:", ["Lelaki", "Perempuan"])
+st.sidebar.header("👤 Maklumat Pengguna")
+nama = st.sidebar.text_input("Nama:")
+gender = st.sidebar.selectbox("Jantina:", ["Lelaki", "Perempuan"])
 default_cal = 2500 if gender == "Lelaki" else 2000
+target_cal = st.sidebar.number_input("🎯 Sasaran Kalori Harian (kcal):", value=default_cal)
 
-target_cal = st.number_input(
-    "Sasaran kalori harian (kcal):", 
-    value=default_cal
-)
+st.markdown("---")
 
-eaten = st.number_input(
-    "Masukkan jumlah kalori yang telah dimakan (kcal):", 
-    min_value=0,
-    value=0
-)
+# =====================
+# Tabs Navigasi
+# =====================
+tab1, tab2, tab3, tab4 = st.tabs(["📏 BMI", "🔥 Kalori", "🍛 Makanan", "📊 Data & Muat Turun"])
 
-baki = target_cal - eaten
+# =====================
+# Tab 1 – BMI
+# =====================
+with tab1:
+    st.header("📏 Kalkulator BMI")
 
-if nama:
-    st.write(f"**{nama}**, jumlah kalori dimakan: **{eaten} kcal**")
-else:
-    st.write(f"Jumlah kalori dimakan: **{eaten} kcal**")
+    col1, col2 = st.columns(2)
+    with col1:
+        berat = st.number_input("Berat (kg)", min_value=1.0, format="%.1f")
+    with col2:
+        tinggi = st.number_input("Tinggi (cm)", min_value=1.0, format="%.1f")
 
-if baki > 0:
-    st.success(f"Kalori belum cukup: {baki} kcal lagi")
-elif baki < 0:
-    st.error(f"Terlampau {abs(baki)} kcal dari sasaran!")
-else:
-    st.info("Tepat cukup kalori!")
+    bmi = None
+    kategori_bmi = ""
+    if berat and tinggi:
+        bmi = berat / ((tinggi / 100) ** 2)
+        st.subheader(f"BMI: {bmi:.2f}")
 
-# -------------------
-# Papar & Simpan Graf
-# -------------------
+        if bmi < 18.5:
+            kategori_bmi = "Kurus"
+        elif bmi < 25:
+            kategori_bmi = "Normal"
+        elif bmi < 30:
+            kategori_bmi = "Berlebihan berat"
+        else:
+            kategori_bmi = "Obes"
 
-if nama and berat and tinggi and bmi is not None:
-    # Data hari ini
-    data_hari_ini = {
-        "Nama": [nama],
-        "Berat (kg)": [berat],
-        "Tinggi (cm)": [tinggi],
-        "BMI": [round(bmi, 2)],
-        "Kategori BMI": [kategori_bmi],
-        "Jantina": [gender],
-        "Kalori Dimakan": [eaten],
-        "Baki Kalori": [baki]
+        st.success(f"Status: **{kategori_bmi}**")
+
+        # Cadangan makanan ikut kategori
+        st.markdown("### 🍽️ Cadangan Pemakanan")
+        if kategori_bmi == "Kurus":
+            st.info("- Tambah makanan berprotein tinggi (ayam, telur, susu)\n- Minum smoothie buah & oat")
+        elif kategori_bmi == "Normal":
+            st.success("- Kekalkan diet seimbang\n- Banyakkan sayur & air kosong")
+        elif kategori_bmi == "Berlebihan berat":
+            st.warning("- Kurangkan makanan bergoreng & manis\n- Lebihkan senaman ringan")
+        else:
+            st.error("- Elakkan makanan segera\n- Fokus pada diet sihat dan aktiviti fizikal")
+
+# =====================
+# Tab 2 – Kalori
+# =====================
+with tab2:
+    st.header("🔥 Pengira Kalori Harian")
+
+    eaten = st.number_input("Masukkan jumlah kalori dimakan (kcal):", min_value=0, value=0)
+    baki = target_cal - eaten
+
+    if baki > 0:
+        st.info(f"Kalori belum cukup: {baki} kcal lagi")
+    elif baki < 0:
+        st.error(f"Terlampau {abs(baki)} kcal dari sasaran!")
+    else:
+        st.success("Tepat cukup kalori!")
+
+    # Kad ringkasan
+    colA, colB, colC = st.columns(3)
+    colA.metric("Kalori Dimakan", f"{eaten} kcal")
+    colB.metric("Sasaran", f"{target_cal} kcal")
+    colC.metric("Baki", f"{baki} kcal")
+
+# =====================
+# Tab 3 – Makanan
+# =====================
+with tab3:
+    st.header("🍛 Pilih Makanan Anda")
+
+    senarai_makanan = {
+        "Nasi Putih (1 pinggan)": 200,
+        "Ayam Goreng": 250,
+        "Ikan Bakar": 180,
+        "Telur Rebus": 80,
+        "Sayur Tumis": 100,
+        "Teh Ais": 150,
+        "Kopi O": 50,
+        "Roti Canai": 300,
+        "Mee Goreng": 400,
+        "Nasi Lemak": 500,
+        "Air Kosong": 0
     }
-    df_hari_ini = pd.DataFrame(data_hari_ini)
 
-    # Graf bar kalori hari ini
-    graf_baki = max(baki, 0)
-    fig, ax = plt.subplots(figsize=(5,3))
-    bars = ax.bar(["Dimakan", "Baki"], [eaten, graf_baki], color=["orange", "green"])
-    ax.set_ylabel("Kalori (kcal)")
-    ax.set_title("Kalori Harian")
-
-    # Letak info pengguna atas graf
-    info_teks = f"Nama: {nama}  |  Berat: {berat}kg  |  Tinggi: {tinggi}cm  |  Status: {kategori_bmi}"
-    
-    plt.tight_layout()
-    plt.figtext(0.5, 1.02, info_teks, wrap=True, horizontalalignment='center', fontsize=10)
-
-    # Label atas bar
-    for bar in bars:
-        height = bar.get_height()
-        if height > 0:
-            ax.annotate(f'{height:.0f}',
-                        xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 3),
-                        textcoords="offset points",
-                        ha='center', va='bottom')
-
-    st.pyplot(fig)
-
-    # Simpan ke CSV
-    nama_fail_csv = f"data_kesihatan_{nama}.csv" if nama else "data_kesihatan.csv"
-    csv = df_hari_ini.to_csv(index=False).encode('utf-8')
-
-    st.download_button(
-        label="📥 Muat Turun Data Kesihatan (CSV)",
-        data=csv,
-        file_name=nama_fail_csv,
-        mime='text/csv'
+    pilihan = st.multiselect(
+        "Pilih makanan yang telah dimakan:",
+        options=list(senarai_makanan.keys())
     )
 
-    # Simpan graf ke PNG dalam memory
-    img_buffer = io.BytesIO()
-    fig.savefig(img_buffer, format='png', bbox_inches='tight')
-    img_buffer.seek(0)
-    plt.close(fig)
+    kalori_makanan = sum(senarai_makanan[m] for m in pilihan)
+    lain = st.number_input("Tambah kalori lain (lain-lain makanan):", min_value=0, value=0)
 
-    st.download_button(
-        label="📸 Muat Turun Graf Kalori (PNG)",
-        data=img_buffer,
-        file_name=f"graf_kalori_{nama}.png" if nama else "graf_kalori.png",
-        mime="image/png"
-    )
+    total_makan = kalori_makanan + lain
+    st.subheader(f"Jumlah Kalori daripada makanan: **{total_makan} kcal**")
 
-else:
-    st.info("Sila lengkapkan maklumat Nama, Berat dan Tinggi sebelum meneruskan.")
+    # Visual graf
+    if total_makan > 0:
+        fig, ax = plt.subplots(figsize=(5, 3))
+        bars = ax.bar(["Dimakan", "Baki"], [total_makan, max(target_cal - total_makan, 0)],
+                      color=["orange", "green"])
+        ax.set_ylabel("Kalori (kcal)")
+        ax.set_title("Kalori Harian (Makanan)")
+        for bar in bars:
+            h = bar.get_height()
+            ax.annotate(f'{h:.0f}', xy=(bar.get_x() + bar.get_width()/2, h), xytext=(0,3),
+                        textcoords="offset points", ha='center', va='bottom')
+        st.pyplot(fig)
+
+# =====================
+# Tab 4 – Data & Muat Turun
+# =====================
+with tab4:
+    st.header("📊 Ringkasan & Muat Turun")
+
+    if nama and tinggi and berat:
+        df = pd.DataFrame({
+            "Nama": [nama],
+            "Jantina": [gender],
+            "Berat (kg)": [berat],
+            "Tinggi (cm)": [tinggi],
+            "BMI": [round(bmi, 2) if bmi else None],
+            "Status BMI": [kategori_bmi],
+            "Kalori Dimakan": [eaten],
+            "Kalori Makanan": [total_makan],
+            "Sasaran Kalori": [target_cal],
+            "Baki Kalori": [baki],
+            "Makanan Dipilih": [", ".join(pilihan)]
+        })
+
+        st.dataframe(df)
+
+        csv = df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="📥 Muat Turun Data (CSV)",
+            data=csv,
+            file_name=f"data_kesihatan_{nama}.csv",
+            mime="text/csv"
+        )
+
+    else:
+        st.info("Lengkapkan maklumat anda di tab sebelumnya untuk melihat ringkasan.")
+
+st.markdown("---")
+st.caption("Dibangunkan dengan ❤️ menggunakan Streamlit")
